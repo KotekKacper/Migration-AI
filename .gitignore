@@ -1,0 +1,11 @@
+/BoardGame/target/
+/BoardGameEngine/target/
+/CLI/target/
+/GUI/target/
+/Players/NaivePlayer/target/
+/Players/NastyPlayer/target/
+/Players/NullPlayer/target/
+/Players/SmartPlayer/target/
+/Rules/Migration/target/
+/RulesProvider/target/
+/Tester/target/
