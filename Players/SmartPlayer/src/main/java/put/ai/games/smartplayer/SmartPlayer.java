@@ -32,7 +32,8 @@ public class SmartPlayer extends Player {
         startTime = System.currentTimeMillis();
         finishTime = false;
         timeframe = getTime()-(0.1*getTime()); //czas do wykorzystania (w milisekundach)
-        bestMove = null;
+
+        // check which player is it
         boolean maximazingPlayer;
         if (getColor() == Color.PLAYER1){
             maximazingPlayer = true;
@@ -41,6 +42,8 @@ public class SmartPlayer extends Player {
         }
 
         minmax(b, 0, getColor(), Integer.MIN_VALUE, Integer.MAX_VALUE, maximazingPlayer, new ArrayList<Move>());
+
+        // if minmax won't get any answer then make first possible move
         if (bestMove == null){
             bestMove = b.getMovesFor(getColor()).get(0);
         }
@@ -48,19 +51,32 @@ public class SmartPlayer extends Player {
         return bestMove;
     }
 
+    /**
+     *
+     * @param b - state of the board to analyze
+     * @param depth - current depth of searching
+     * @param currentPlayer - which player now makes the move
+     * @param alpha - parameter for pruning
+     * @param beta - parameter for pruning
+     * @param maximizingPlayer - which player is the algorithm running for
+     * @param moves - list of moves made before that point in the game
+     * @return the value of the given node
+     */
     private int minmax(Board b, int depth, Color currentPlayer, int alpha, int beta, boolean maximizingPlayer, ArrayList<Move> moves) {
+        // decide the best result up to this point
         if (maximizingPlayer && b.getWinner(currentPlayer) != Color.EMPTY && b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size() > bestResult) {
             bestResult = b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size();
             bestMove = moves.get(0);
         }
         else if (!maximizingPlayer && b.getWinner(currentPlayer) != Color.EMPTY && b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size() < bestResult){
-
+            bestResult = b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size();
+            bestMove = moves.get(0);
         }
 
-        // jeśli algorytm:
-        // - skończy przewidziany czas
-        // - dojdzie do maksymalnej wskazanej głębokości,
-        // - dojdzie do celu
+        // finish calculations if:
+        // - time run out
+        // - maximum depth was reached
+        // - game ended
         if (finishTime || depth == maxDepth || b.getWinner(currentPlayer) == getColor()) {
             return b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size();
         }
