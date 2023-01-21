@@ -32,6 +32,7 @@ public class SmartPlayer extends Player {
         startTime = System.currentTimeMillis();
         finishTime = false;
         timeframe = getTime()-(0.1*getTime()); //czas do wykorzystania (w milisekundach)
+        bestMove = null;
 
         // check which player is it
         boolean maximazingPlayer;
@@ -88,11 +89,7 @@ public class SmartPlayer extends Player {
                 nextBoard.doMove(nextMove);
                 ArrayList<Move>nextMoves = (ArrayList<Move>) moves.clone();
                 nextMoves.add(nextMove);
-                if (currentPlayer == Color.PLAYER1){
-                    value = Math.max(value, minmax(nextBoard, depth + 1, Color.PLAYER2, alpha, beta, maximizingPlayer, nextMoves));
-                } else{
-                    value = Math.max(value, minmax(nextBoard, depth + 1, Color.PLAYER1, alpha, beta, maximizingPlayer, nextMoves));
-                }
+                value = Math.max(value, minmax(nextBoard, depth + 1, getOpponent(currentPlayer), alpha, beta, maximizingPlayer, nextMoves));
 
                 alpha = Math.max(alpha, value);
                 if (alpha >= beta ||
@@ -112,11 +109,7 @@ public class SmartPlayer extends Player {
                 nextBoard.doMove(nextMove);
                 ArrayList<Move>nextMoves = (ArrayList<Move>) moves.clone();
                 nextMoves.add(nextMove);
-                if (currentPlayer == Color.PLAYER1){
-                    value = Math.min(value, minmax(nextBoard, depth + 1, Color.PLAYER2, alpha, beta, maximizingPlayer, nextMoves));
-                } else{
-                    value = Math.min(value, minmax(nextBoard, depth + 1, Color.PLAYER1, alpha, beta, maximizingPlayer, nextMoves));
-                }
+                value = Math.min(value, minmax(nextBoard, depth + 1, getOpponent(currentPlayer), alpha, beta, maximizingPlayer, nextMoves));
 
                 beta = Math.min(beta, value);
                 if (alpha >= beta ||
