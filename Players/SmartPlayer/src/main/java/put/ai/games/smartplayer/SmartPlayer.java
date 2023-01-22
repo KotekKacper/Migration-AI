@@ -13,13 +13,8 @@ import put.ai.games.game.Player;
 public class SmartPlayer extends Player {
 
     private int maxDepth = 10;
-
-    private long startTime;
-    private boolean finishTime;
-
-    private double timeframe;
     private Move bestMove;
-    private int bestResult;
+    private int bestResult = Integer.MAX_VALUE;
 
 
     @Override
@@ -29,26 +24,18 @@ public class SmartPlayer extends Player {
 
     @Override
     public Move nextMove(Board b) {
-        startTime = System.currentTimeMillis();
-        finishTime = false;
-        timeframe = getTime()-(0.1*getTime()); //czas do wykorzystania (w milisekundach)
-        bestMove = null;
+        bestMove = b.getMovesFor(getColor()).get(0);
 
-        // check which player is it
-        boolean maximazingPlayer;
-        if (getColor() == Color.PLAYER1){
-            maximazingPlayer = true;
-        } else{
-            maximazingPlayer = false;
+        int result;
+        for (Move move: b.getMovesFor(getColor())){
+            b.doMove(move);
+            result = minmax(b, 0, getColor(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+            b.undoMove(move);
+            if (result < bestResult){
+                bestResult = result;
+                bestMove = move;
+            }
         }
-
-        minmax(b, 0, getColor(), Integer.MIN_VALUE, Integer.MAX_VALUE, maximazingPlayer, new ArrayList<Move>());
-
-        // if minmax won't get any answer then make first possible move
-        if (bestMove == null){
-            bestMove = b.getMovesFor(getColor()).get(0);
-        }
-
         return bestMove;
     }
 
@@ -59,66 +46,48 @@ public class SmartPlayer extends Player {
      * @param currentPlayer - which player now makes the move
      * @param alpha - parameter for pruning
      * @param beta - parameter for pruning
-     * @param maximizingPlayer - which player is the algorithm running for
-     * @param moves - list of moves made before that point in the game
      * @return the value of the given node
      */
-    private int minmax(Board b, int depth, Color currentPlayer, int alpha, int beta, boolean maximizingPlayer, ArrayList<Move> moves) {
-        // decide the best result up to this point
-        if (maximizingPlayer && b.getWinner(currentPlayer) != Color.EMPTY && b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size() > bestResult) {
-            bestResult = b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size();
-            bestMove = moves.get(0);
-        }
-        else if (!maximizingPlayer && b.getWinner(currentPlayer) != Color.EMPTY && b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size() < bestResult){
-            bestResult = b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size();
-            bestMove = moves.get(0);
-        }
-
+    private int minmax(Board b, int depth, Color currentPlayer, int alpha, int beta) {
         // finish calculations if:
-        // - time run out
         // - maximum depth was reached
         // - game ended
-        if (finishTime || depth == maxDepth || b.getWinner(currentPlayer) == getColor()) {
-            return b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size();
+        if (depth == maxDepth || b.getWinner(currentPlayer) == getColor()) {
+            if (b.getWinner(currentPlayer) == getColor()){
+                return Integer.MIN_VALUE;
+            } else if (b.getWinner(currentPlayer) == getOpponent(getColor())){
+                return Integer.MAX_VALUE;
+            } else if (getColor() == Color.PLAYER1){
+                return b.getMovesFor(Color.PLAYER1).size()-b.getMovesFor(Color.PLAYER2).size();
+            } else if (getColor() == Color.PLAYER2){
+                return b.getMovesFor(Color.PLAYER2).size()-b.getMovesFor(Color.PLAYER1).size();
+            }
         }
 
-        if (maximizingPlayer) {
+        if (currentPlayer == getColor()) {
             int value = Integer.MIN_VALUE;
             for (Move nextMove : b.getMovesFor(currentPlayer)) {
-                Board nextBoard = b.clone();
-                nextBoard.doMove(nextMove);
-                ArrayList<Move>nextMoves = (ArrayList<Move>) moves.clone();
-                nextMoves.add(nextMove);
-                value = Math.max(value, minmax(nextBoard, depth + 1, getOpponent(currentPlayer), alpha, beta, maximizingPlayer, nextMoves));
-
+                b.doMove(nextMove);
+                value = Math.max(value, minmax(b, depth + 1, getOpponent(currentPlayer), alpha, beta));
+                b.undoMove(nextMove);
                 alpha = Math.max(alpha, value);
-                if (alpha >= beta ||
-                        System.currentTimeMillis() - startTime >= timeframe) {
-                    if (bestMove == null) {
-                        bestMove = moves.get(0);
-                    }
-                    finishTime = true;
-                    break;
+                if (alpha >= beta) {
+                    return beta;
                 }
             }
-            return value;
+            return alpha;
         } else {
             int value = Integer.MAX_VALUE;
             for (Move nextMove : b.getMovesFor(currentPlayer)) {
-                Board nextBoard = b.clone();
-                nextBoard.doMove(nextMove);
-                ArrayList<Move>nextMoves = (ArrayList<Move>) moves.clone();
-                nextMoves.add(nextMove);
-                value = Math.min(value, minmax(nextBoard, depth + 1, getOpponent(currentPlayer), alpha, beta, maximizingPlayer, nextMoves));
-
+                b.doMove(nextMove);
+                value = Math.min(value, minmax(b, depth + 1, getOpponent(currentPlayer), alpha, beta));
+                b.undoMove(nextMove);
                 beta = Math.min(beta, value);
-                if (alpha >= beta ||
-                        System.currentTimeMillis() - startTime >= timeframe) {
-                    finishTime = true;
-                    break;
+                if (alpha >= beta) {
+                    return alpha;
                 }
             }
-            return value;
+            return beta;
         }
     }
 
